@@ -1,9 +1,9 @@
 # Vector Forces Deployments
 
-This directory contains one reusable Helm chart and one values file per app.
+This repository contains one reusable Helm chart and one generic values file.
 
 ```text
-deploy/
+.
 ├── app-chart/
 └── values/
     └── app.yaml
@@ -12,8 +12,8 @@ deploy/
 Deploy an app by passing the real app values at runtime:
 
 ```bash
-helm upgrade --install "${APP_NAME}" ./deploy/app-chart \
-  -f ./deploy/values/app.yaml \
+helm upgrade --install "${APP_NAME}" ./app-chart \
+  -f ./values/app.yaml \
   --namespace "${APP_NAMESPACE}" \
   --create-namespace \
   --set app.name="${APP_NAME}" \
@@ -29,8 +29,8 @@ helm upgrade --install "${APP_NAME}" ./deploy/app-chart \
 For CI/CD, set the image tag from the commit SHA:
 
 ```bash
-helm upgrade --install "${APP_NAME}" ./deploy/app-chart \
-  -f ./deploy/values/app.yaml \
+helm upgrade --install "${APP_NAME}" ./app-chart \
+  -f ./values/app.yaml \
   --namespace "${APP_NAMESPACE}" \
   --create-namespace \
   --set app.name="${APP_NAME}" \
