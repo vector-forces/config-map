@@ -1,0 +1,69 @@
+name: Publish Helm Chart
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - app-chart/**
+      - .github/workflows/publish-chart.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  CHART_NAMESPACE: ${{ github.repository_owner }}/charts
+
+jobs:
+  publish:
+    name: Package and publish chart
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: Read chart metadata
+        id: chart
+        run: |
+          CHART_NAME="$(helm show chart ./app-chart | awk '/^name:/ {print $2}')"
+          CHART_VERSION="$(helm show chart ./app-chart | awk '/^version:/ {print $2}')"
+          echo "name=${CHART_NAME}" >> "${GITHUB_OUTPUT}"
+          echo "version=${CHART_VERSION}" >> "${GITHUB_OUTPUT}"
+
+      - name: Log in to GHCR
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login "${REGISTRY}" \
+            --username "${{ github.actor }}" \
+            --password-stdin
+
+      - name: Lint chart
+        run: helm lint ./app-chart
+
+      - name: Check whether chart version already exists
+        id: existing
+        run: |
+          if helm show chart "oci://${REGISTRY}/${CHART_NAMESPACE}/${{ steps.chart.outputs.name }}" \
+            --version "${{ steps.chart.outputs.version }}" >/dev/null 2>&1; then
+            echo "exists=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "exists=false" >> "${GITHUB_OUTPUT}"
+          fi
+
+      - name: Package chart
+        if: steps.existing.outputs.exists == 'false'
+        run: helm package ./app-chart --destination ./dist
+
+      - name: Push chart
+        if: steps.existing.outputs.exists == 'false'
+        run: helm push "./dist/${{ steps.chart.outputs.name }}-${{ steps.chart.outputs.version }}.tgz" "oci://${REGISTRY}/${CHART_NAMESPACE}"
+
+      - name: Chart already published
+        if: steps.existing.outputs.exists == 'true'
+        run: echo "Chart ${{ steps.chart.outputs.name }}:${{ steps.chart.outputs.version }} is already published."
