@@ -1,0 +1,149 @@
+app:
+  name: my-app
+  namespace: default
+  labels: {}
+  annotations: {}
+
+nameOverride: ""
+fullnameOverride: ""
+
+replicaCount: 1
+
+image:
+  repository: nginx
+  tag: latest
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+container:
+  port: 8080
+  additionalPorts: []
+  command: []
+  args: []
+  workingDir: ""
+  securityContext: {}
+
+deploymentAnnotations: {}
+podAnnotations: {}
+podLabels: {}
+podSecurityContext: {}
+
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 25%
+    maxSurge: 25%
+
+terminationGracePeriodSeconds: 30
+
+service:
+  enabled: true
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+  annotations: {}
+
+ingress:
+  enabled: false
+  className: traefik
+  annotations: {}
+  host: app.example.com
+  path: /
+  pathType: Prefix
+  tls:
+    enabled: false
+    secretName: ""
+    hosts: []
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+env: {}
+
+envFrom:
+  configMaps: []
+  secrets: []
+
+config: {}
+configMap:
+  enabled: true
+  name: ""
+  annotations: {}
+  envFrom: false
+  mount:
+    enabled: false
+    path: /etc/config
+    readOnly: true
+
+secretEnv: {}
+secretData: {}
+secret:
+  enabled: true
+  name: ""
+  annotations: {}
+  type: Opaque
+  envFrom: false
+  mount:
+    enabled: false
+    path: /etc/secret
+    readOnly: true
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+  automountServiceAccountToken: true
+
+probes:
+  liveness:
+    enabled: false
+    path: /health
+    port: http
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 1
+    failureThreshold: 3
+  readiness:
+    enabled: false
+    path: /health
+    port: http
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 1
+    failureThreshold: 3
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: null
+
+persistence:
+  enabled: false
+  existingClaim: ""
+  claimName: ""
+  annotations: {}
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ""
+  size: 1Gi
+  mountPath: /data
+  readOnly: false
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+networkPolicy:
+  enabled: false
+  policyTypes:
+    - Ingress
+  ingress: []
+  egress: []

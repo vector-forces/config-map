@@ -1,0 +1,175 @@
+{{- $annotations := mergeOverwrite (deepCopy (default (dict) .Values.app.annotations)) (default (dict) .Values.deploymentAnnotations) }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "app-chart.fullname" . }}
+  namespace: {{ include "app-chart.namespace" . }}
+  labels:
+    {{- include "app-chart.labels" . | nindent 4 }}
+  {{- with $annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  {{- with .Values.strategy }}
+  strategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "app-chart.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "app-chart.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      serviceAccountName: {{ include "app-chart.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.serviceAccount.automountServiceAccountToken }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ include "app-chart.fullname" . }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.container.command }}
+          command:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.container.args }}
+          args:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- if .Values.container.workingDir }}
+          workingDir: {{ .Values.container.workingDir | quote }}
+          {{- end }}
+          {{- with .Values.container.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.container.port }}
+              protocol: TCP
+            {{- with .Values.container.additionalPorts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- if or .Values.env .Values.secretEnv }}
+          env:
+            {{- range $key, $value := .Values.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            {{- range $key, $_ := .Values.secretEnv }}
+            - name: {{ $key }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "app-chart.secretName" $ }}
+                  key: {{ $key }}
+            {{- end }}
+          {{- end }}
+          {{- if or .Values.envFrom.configMaps .Values.envFrom.secrets (and .Values.configMap.enabled .Values.configMap.envFrom .Values.config) (and .Values.secret.enabled .Values.secret.envFrom (or .Values.secretEnv .Values.secretData)) }}
+          envFrom:
+            {{- if and .Values.configMap.enabled .Values.configMap.envFrom .Values.config }}
+            - configMapRef:
+                name: {{ include "app-chart.configMapName" . }}
+            {{- end }}
+            {{- if and .Values.secret.enabled .Values.secret.envFrom (or .Values.secretEnv .Values.secretData) }}
+            - secretRef:
+                name: {{ include "app-chart.secretName" . }}
+            {{- end }}
+            {{- range .Values.envFrom.configMaps }}
+            - configMapRef:
+                name: {{ . }}
+            {{- end }}
+            {{- range .Values.envFrom.secrets }}
+            - secretRef:
+                name: {{ . }}
+            {{- end }}
+          {{- end }}
+          {{- if .Values.probes.liveness.enabled }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.probes.liveness.path }}
+              port: {{ .Values.probes.liveness.port }}
+            initialDelaySeconds: {{ .Values.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.probes.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.probes.liveness.failureThreshold }}
+          {{- end }}
+          {{- if .Values.probes.readiness.enabled }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.probes.readiness.path }}
+              port: {{ .Values.probes.readiness.port }}
+            initialDelaySeconds: {{ .Values.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.probes.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.probes.readiness.failureThreshold }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- if or (and .Values.configMap.enabled .Values.configMap.mount.enabled .Values.config) (and .Values.secret.enabled .Values.secret.mount.enabled (or .Values.secretEnv .Values.secretData)) .Values.persistence.enabled }}
+          volumeMounts:
+            {{- if and .Values.configMap.enabled .Values.configMap.mount.enabled .Values.config }}
+            - name: config
+              mountPath: {{ .Values.configMap.mount.path }}
+              readOnly: {{ .Values.configMap.mount.readOnly }}
+            {{- end }}
+            {{- if and .Values.secret.enabled .Values.secret.mount.enabled (or .Values.secretEnv .Values.secretData) }}
+            - name: secret
+              mountPath: {{ .Values.secret.mount.path }}
+              readOnly: {{ .Values.secret.mount.readOnly }}
+            {{- end }}
+            {{- if .Values.persistence.enabled }}
+            - name: data
+              mountPath: {{ .Values.persistence.mountPath }}
+              readOnly: {{ .Values.persistence.readOnly }}
+            {{- end }}
+          {{- end }}
+      {{- if or (and .Values.configMap.enabled .Values.configMap.mount.enabled .Values.config) (and .Values.secret.enabled .Values.secret.mount.enabled (or .Values.secretEnv .Values.secretData)) .Values.persistence.enabled }}
+      volumes:
+        {{- if and .Values.configMap.enabled .Values.configMap.mount.enabled .Values.config }}
+        - name: config
+          configMap:
+            name: {{ include "app-chart.configMapName" . }}
+        {{- end }}
+        {{- if and .Values.secret.enabled .Values.secret.mount.enabled (or .Values.secretEnv .Values.secretData) }}
+        - name: secret
+          secret:
+            secretName: {{ include "app-chart.secretName" . }}
+        {{- end }}
+        {{- if .Values.persistence.enabled }}
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ default (include "app-chart.pvcName" .) .Values.persistence.existingClaim }}
+        {{- end }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

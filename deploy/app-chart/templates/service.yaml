@@ -1,0 +1,23 @@
+{{- if .Values.service.enabled }}
+{{- $annotations := mergeOverwrite (deepCopy (default (dict) .Values.app.annotations)) (default (dict) .Values.service.annotations) }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "app-chart.fullname" . }}
+  namespace: {{ include "app-chart.namespace" . }}
+  labels:
+    {{- include "app-chart.labels" . | nindent 4 }}
+  {{- with $annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.service.type }}
+  selector:
+    {{- include "app-chart.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: http
+      port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.targetPort }}
+      protocol: TCP
+{{- end }}
