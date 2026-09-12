@@ -32,7 +32,7 @@ repository:
 
 ```bash
 helm upgrade --install "${APP_NAME}" \
-  oci://ghcr.io/pkumar-vf/charts/app-chart \
+  oci://ghcr.io/vector-forces/charts/app-chart \
   --version 0.1.0 \
   --namespace "${APP_NAMESPACE}" \
   --create-namespace \
@@ -50,7 +50,7 @@ For CI/CD, set the image tag from the commit SHA:
 
 ```bash
 helm upgrade --install "${APP_NAME}" \
-  oci://ghcr.io/pkumar-vf/charts/app-chart \
+  oci://ghcr.io/vector-forces/charts/app-chart \
   --version 0.1.0 \
   --namespace "${APP_NAMESPACE}" \
   --create-namespace \
