@@ -1,12 +1,9 @@
 name: Publish Helm Chart
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - app-chart/**
-      - .github/workflows/publish-chart.yml
+  release:
+    types:
+      - published
   workflow_dispatch:
 
 permissions:

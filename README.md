@@ -33,7 +33,7 @@ repository:
 ```bash
 helm upgrade --install "${APP_NAME}" \
   oci://ghcr.io/vector-forces/charts/app-chart \
-  --version 0.1.0 \
+  --version 0.1.1 \
   --namespace "${APP_NAMESPACE}" \
   --create-namespace \
   --set-string app.name="${APP_NAME}" \
@@ -51,7 +51,7 @@ For CI/CD, set the image tag from the commit SHA:
 ```bash
 helm upgrade --install "${APP_NAME}" \
   oci://ghcr.io/vector-forces/charts/app-chart \
-  --version 0.1.0 \
+  --version 0.1.1 \
   --namespace "${APP_NAMESPACE}" \
   --create-namespace \
   --set-string app.name="${APP_NAME}" \
@@ -112,10 +112,11 @@ extraEnv:
         key: 89d3c644-e086-415a-9ff4-b4d900802240
 ```
 
-To publish a new chart version, update `version` in `app-chart/Chart.yaml` and
-push to `main`. The workflow in `.github/workflows/publish-chart.yml` publishes
-that chart version to GHCR. If GitHub creates the package as private, make the
-package public once from the GitHub package settings.
+To publish a new chart version, update `version` in `app-chart/Chart.yaml`,
+merge the change, and publish a new GitHub Release. The workflow in
+`.github/workflows/publish-chart.yml` publishes that chart version to GHCR. If
+GitHub creates the package as private, make the package public once from the
+GitHub package settings.
 
 If an app exposes a health endpoint, enable probes in its values file:
 
