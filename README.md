@@ -68,7 +68,7 @@ Keep real app names, domains, and environment-specific settings in your CI/CD
 variables or local shell environment instead of committing them to this repo.
 
 Use `extraEnv` when an app needs full Kubernetes `EnvVar` entries, such as
-references to existing secrets:
+references to one or more existing secrets:
 
 ```yaml
 extraEnv:
@@ -77,13 +77,18 @@ extraEnv:
       secretKeyRef:
         name: dev-secrets
         key: 89d3c644-e086-415a-9ff4-b4d900802240
+  - name: API_TOKEN
+    valueFrom:
+      secretKeyRef:
+        name: shared-api-secrets
+        key: api-token
 ```
 
 The same value can be passed from CI/CD with Helm JSON:
 
 ```bash
 helm upgrade --install "${APP_NAME}" ./app-chart \
-  --set-json 'extraEnv=[{"name":"DB_PASSWORD","valueFrom":{"secretKeyRef":{"name":"dev-secrets","key":"89d3c644-e086-415a-9ff4-b4d900802240"}}}]'
+  --set-json 'extraEnv=[{"name":"DB_PASSWORD","valueFrom":{"secretKeyRef":{"name":"dev-secrets","key":"89d3c644-e086-415a-9ff4-b4d900802240"}}},{"name":"API_TOKEN","valueFrom":{"secretKeyRef":{"name":"shared-api-secrets","key":"api-token"}}}]'
 ```
 
 To publish a new chart version, update `version` in `app-chart/Chart.yaml` and
