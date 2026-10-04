@@ -91,6 +91,27 @@ helm upgrade --install "${APP_NAME}" ./app-chart \
   --set-json 'extraEnv=[{"name":"DB_PASSWORD","valueFrom":{"secretKeyRef":{"name":"dev-secrets","key":"89d3c644-e086-415a-9ff4-b4d900802240"}}},{"name":"API_TOKEN","valueFrom":{"secretKeyRef":{"name":"shared-api-secrets","key":"api-token"}}}]'
 ```
 
+Use host networking with an added container capability when an app must run
+network tools from the node network namespace, such as `arping`:
+
+```yaml
+hostNetwork: true
+dnsPolicy: ClusterFirstWithHostNet
+
+container:
+  securityContext:
+    capabilities:
+      add:
+        - NET_RAW
+
+extraEnv:
+  - name: DB_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: dev-secretts
+        key: 89d3c644-e086-415a-9ff4-b4d900802240
+```
+
 To publish a new chart version, update `version` in `app-chart/Chart.yaml` and
 push to `main`. The workflow in `.github/workflows/publish-chart.yml` publishes
 that chart version to GHCR. If GitHub creates the package as private, make the

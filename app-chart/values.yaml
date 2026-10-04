@@ -37,6 +37,9 @@ strategy:
 
 terminationGracePeriodSeconds: 30
 
+hostNetwork: false
+dnsPolicy: ""
+
 service:
   enabled: true
   type: ClusterIP
