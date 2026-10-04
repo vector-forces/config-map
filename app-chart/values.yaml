@@ -65,6 +65,7 @@ resources:
     memory: 512Mi
 
 env: {}
+extraEnv: []
 
 envFrom:
   configMaps: []

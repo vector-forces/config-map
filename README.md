@@ -67,6 +67,25 @@ helm upgrade --install "${APP_NAME}" \
 Keep real app names, domains, and environment-specific settings in your CI/CD
 variables or local shell environment instead of committing them to this repo.
 
+Use `extraEnv` when an app needs full Kubernetes `EnvVar` entries, such as
+references to existing secrets:
+
+```yaml
+extraEnv:
+  - name: DB_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: dev-secrets
+        key: 89d3c644-e086-415a-9ff4-b4d900802240
+```
+
+The same value can be passed from CI/CD with Helm JSON:
+
+```bash
+helm upgrade --install "${APP_NAME}" ./app-chart \
+  --set-json 'extraEnv=[{"name":"DB_PASSWORD","valueFrom":{"secretKeyRef":{"name":"dev-secrets","key":"89d3c644-e086-415a-9ff4-b4d900802240"}}}]'
+```
+
 To publish a new chart version, update `version` in `app-chart/Chart.yaml` and
 push to `main`. The workflow in `.github/workflows/publish-chart.yml` publishes
 that chart version to GHCR. If GitHub creates the package as private, make the

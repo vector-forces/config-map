@@ -70,7 +70,7 @@ spec:
             {{- with .Values.container.additionalPorts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
-          {{- if or .Values.env .Values.secretEnv }}
+          {{- if or .Values.env .Values.secretEnv .Values.extraEnv }}
           env:
             {{- range $key, $value := .Values.env }}
             - name: {{ $key }}
@@ -82,6 +82,9 @@ spec:
                 secretKeyRef:
                   name: {{ include "app-chart.secretName" $ }}
                   key: {{ $key }}
+            {{- end }}
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
             {{- end }}
           {{- end }}
           {{- if or .Values.envFrom.configMaps .Values.envFrom.secrets (and .Values.configMap.enabled .Values.configMap.envFrom .Values.config) (and .Values.secret.enabled .Values.secret.envFrom (or .Values.secretEnv .Values.secretData)) }}
